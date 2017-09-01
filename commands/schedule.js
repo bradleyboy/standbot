@@ -51,7 +51,7 @@ export default async function(userId, channelId, args, rawMessage) {
       client.sayAt(
         channelId,
         userId,
-        "You haven't scheduled any standups yet. Yo, do you even scrum?",
+        "You haven't scheduled any standups yet.",
         sayOpts
       );
       return;

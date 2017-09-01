@@ -12,7 +12,7 @@ export default async function(userId, channelId, message, rawMessage) {
     client.sayAt(
       channelId,
       userId,
-      "Sorry, there isn't a standup in progress. Slow your scrum.",
+      "Sorry, there isn't a standup in progress.",
       {
         thread_ts: rawMessage.thread_ts,
       }
