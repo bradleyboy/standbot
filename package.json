@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Scheduled standups in Slack.",
   "main": "index.js",
+  "private": true,
   "dependencies": {
     "emojify.js": "^1.1.0",
     "markdown-it": "^7.0.0",
