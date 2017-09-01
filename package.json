@@ -1,0 +1,30 @@
+{
+  "name": "standbot",
+  "version": "1.0.0",
+  "description": "Scheduled standups in Slack.",
+  "main": "index.js",
+  "dependencies": {
+    "emojify.js": "^1.1.0",
+    "markdown-it": "^7.0.0",
+    "moment-timezone": "^0.4.1",
+    "node-emoji": "^1.0.3",
+    "node-fetch": "^1.3.3",
+    "nodemailer": "^1.7.0",
+    "nodemailer-sendmail-transport": "^1.0.0",
+    "sequelize": "^3.10.0",
+    "sequelize-json": "^2.1.2",
+    "sqlite3": "^3.1.0",
+    "unique-random-array": "^1.0.0",
+    "slack-client": "~2.0.6"
+  },
+  "devDependencies": {
+    "babel": "^5.8.23"
+  },
+  "scripts": {
+    "start": "DEBUG=true babel-node index.js",
+    "reset": "babel-node reset.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brad Daily <brad.daily@gmail.com>",
+  "license": "MIT"
+}

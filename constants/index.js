@@ -1,0 +1,37 @@
+import * as config from '../config';
+
+export default {
+  COMMAND: 'standup(?:bot)?',
+  IGNORE_CHANNELS: config.ignoreChannels || [],
+  ENVIRONMENT: config.environment || 'PRODUCTION',
+  NICK: config.nick,
+  INTERVAL: config.interval,
+  SUMMARY_EMAIL_DEFAULT_DOMAIN: config.summaryEmailDomain || '',
+  SUMMARY_EMAIL_FROM_ADDRESS:
+    config.summaryEmailFromAddress || '"Standupbot" <no-reply@gmail.com>',
+  COMMANDS: [
+    'add',
+    'announce',
+    'end',
+    'remove',
+    'update',
+    'help',
+    'schedule',
+    'skip',
+    'start',
+    'email',
+    'cancel',
+    'threading',
+    'time',
+    'topic',
+  ],
+  STANDUP_OPEN: 0,
+  STANDUP_COMPLETE: 1,
+  STANDUP_CLOSED: 2,
+  NAGGED_NO: 0,
+  NAGGED_WARN: 1,
+  NAGGED_THREAT: 2,
+  UPDATE_REGULAR: 0,
+  UPDATE_SKIP: 1,
+  HOLIDAYS: config.holidays || [],
+};
