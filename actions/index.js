@@ -141,7 +141,7 @@ export const sendStandupSummaryEmail = async standup => {
 <html>
 <head></head>
 <body style="padding: 5px;">
-  <h1 style="margin: 0; font-size: 16px; font-weight: normal; padding: 5px; border-bottom: 1px solid orange;">Today's standup summary for <b>${channel.name}</b></h1>
+  <h1 style="margin: 0; font-size: 16px; font-weight: normal; padding: 5px; border-bottom: 1px solid #444;">Today's standup summary for <b>${channel.name}</b></h1>
   <table cellspacing="0" width="100%">${fragments.join('')}</table>
 </body>
   `;
