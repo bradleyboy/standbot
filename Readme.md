@@ -36,6 +36,6 @@ To run it, create your config.js file and also create a directory to mount for t
 ```
 docker run -d \
   -v /path/to/config.js:/usr/src/app/config.js \
-  -v /path/to/storage/directory:/usr/src/app/storage
+  -v /path/to/storage/directory:/usr/src/app/storage \
   standbot
 ```
