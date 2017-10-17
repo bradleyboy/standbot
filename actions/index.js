@@ -34,7 +34,7 @@ import {
 const formatUpdateMessage = ({ type, message, meta }) => {
   if (type === UPDATE_SKIP) {
     const reporter = client.getUser(meta.reporter);
-    return `${message} (according to @${reporter.name})`;
+    return `${message} (according to @${reporter.profile.display_name})`;
   }
 
   return client.formatMessageAsPlain(message);
@@ -129,7 +129,8 @@ export const sendStandupSummaryEmail = async standup => {
         <td width="120" style="padding: 10px 0; text-align: center;">
           <img width="72" style="border-radius: 50%" src="${user.profile
             .image_72}">
-          <p style="margin:0; font-weight: bold;">${user.name}</p>
+          <p style="margin:0; font-weight: bold;">${user.profile
+            .display_name}</p>
         </td>
         <td style="padding-top: 10px">${updates}</td>
       </tr>
@@ -255,7 +256,10 @@ export const startStandup = async room => {
     threaded: room.threading,
   });
 
-  const ends = moment().utc().add(room.length, 'minutes').unix();
+  const ends = moment()
+    .utc()
+    .add(room.length, 'minutes')
+    .unix();
 
   // Slack magic to format the date in the user's timezone
   const endsText = `<!date^${ends}^standup ends at {time}|standup ends in ${room.length} minutes>`;
