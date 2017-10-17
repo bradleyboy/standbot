@@ -467,7 +467,7 @@ export const updateTopic = async standup => {
   const nicks = users
     .map(user => {
       const clientUser = client.getUser(user.userId);
-      const display = `${preventAlerts(clientUser.name)}`;
+      const display = `${preventAlerts(clientUser.profile.display_name)}`;
 
       if (ids.indexOf(user.id) === -1) {
         return display;

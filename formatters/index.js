@@ -41,7 +41,7 @@ export const prettyTime = (hours, minutes = 0) => {
 };
 
 const linkJira = message => {
-  if (!jiraDomain.length) {
+  if (!jiraDomain || !jiraDomain.length) {
     return message;
   }
 
@@ -53,7 +53,7 @@ const linkJira = message => {
 };
 
 const linkPullRequest = message => {
-  if (!githubDomain.length) {
+  if (!githubDomain || !githubDomain.length) {
     return message;
   }
 
