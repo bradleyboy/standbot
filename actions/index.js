@@ -242,6 +242,11 @@ export const rollbackStandup = async standup => {
 
 export const startStandup = async room => {
   const users = await room.getUsers();
+
+  if (users.length === 0) {
+    return;
+  }
+
   const alert = users.map(user => u(user.userId)).join(' ');
 
   const now = localdate();
@@ -307,9 +312,14 @@ export const isHoliday = () => {
 };
 
 export const startScheduledStandup = async schedule => {
-  setScheduleLast(schedule);
-
   const room = await schedule.getRoom();
+  const users = await room.getUsers();
+
+  if (users.length === 0) {
+    return;
+  }
+
+  setScheduleLast(schedule);
 
   if (isHoliday()) {
     client.say(
