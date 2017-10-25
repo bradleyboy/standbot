@@ -9,7 +9,7 @@ const responses = uniqueArray([
   ':raised_hands:',
   ':boom:',
   ':balloon:',
-  ':party:',
+  ':tada:',
   ':100:',
 ]);
 
