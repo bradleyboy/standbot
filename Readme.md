@@ -28,7 +28,7 @@ Code formatting consitency is maintained via `prettier`. Please make sure any ch
 In this directory, build the image:
 
 ```
-docker built -t standbot .
+docker build -t standbot .
 ```
 
 To run it, create your config.js file and also create a directory to mount for the sqlite database. Then run the container:
