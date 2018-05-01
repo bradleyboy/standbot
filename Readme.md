@@ -39,3 +39,7 @@ docker run -d \
   -v /path/to/storage/directory:/usr/src/app/storage \
   standbot
 ```
+
+```
+bewbs
+```
