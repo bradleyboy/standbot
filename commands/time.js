@@ -2,7 +2,7 @@ import client from '../lib/client';
 import { Room } from '../lib/db';
 
 export default function(userId, channelId, time, rawMessage) {
-  const matches = time.trim().match(/(\d+)(m|h)/);
+  const matches = time && time.trim().match(/(\d+)(m|h)/);
 
   const sayOpts = {
     thread_ts: rawMessage.thread_ts,
