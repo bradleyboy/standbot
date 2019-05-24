@@ -5,9 +5,6 @@ export const token = '';
 // Unit: milliseconds
 export const interval = 10000;
 
-// Nick the bot uses. Should be in the form of '<@U1234A12>'
-export const nick = '';
-
 // Environment to run the bot in. DEVELOPMENT or PRODUCTION
 export const environment = 'DEVELOPMENT';
 

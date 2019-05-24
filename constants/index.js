@@ -4,7 +4,6 @@ export default {
   COMMAND: 'standup(?:bot)?',
   IGNORE_CHANNELS: config.ignoreChannels || [],
   ENVIRONMENT: config.environment || 'PRODUCTION',
-  NICK: config.nick,
   INTERVAL: config.interval,
   SUMMARY_EMAIL_DEFAULT_DOMAIN: config.summaryEmailDomain || '',
   SUMMARY_EMAIL_FROM_ADDRESS:

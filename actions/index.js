@@ -27,7 +27,6 @@ import {
   UPDATE_NORMAL,
   UPDATE_SKIP,
   HOLIDAYS,
-  NICK,
   SUMMARY_EMAIL_FROM_ADDRESS,
 } from '../constants';
 
@@ -127,10 +126,12 @@ export const sendStandupSummaryEmail = async standup => {
     fragments.push(`
       <tr style="background: ${alternateBackground()};">
         <td width="120" style="padding: 10px 0; text-align: center;">
-          <img width="72" style="border-radius: 50%" src="${user.profile
-            .image_72}">
-          <p style="margin:0; font-weight: bold;">${user.profile
-            .display_name}</p>
+          <img width="72" style="border-radius: 50%" src="${
+            user.profile.image_72
+          }">
+          <p style="margin:0; font-weight: bold;">${
+            user.profile.display_name
+          }</p>
         </td>
         <td style="padding-top: 10px">${updates}</td>
       </tr>
@@ -141,7 +142,9 @@ export const sendStandupSummaryEmail = async standup => {
 <html>
 <head></head>
 <body style="padding: 5px;">
-  <h1 style="margin: 0; font-size: 16px; font-weight: normal; padding: 5px; border-bottom: 1px solid #444;">Today's standup summary for <b>${channel.name}</b></h1>
+  <h1 style="margin: 0; font-size: 16px; font-weight: normal; padding: 5px; border-bottom: 1px solid #444;">Today's standup summary for <b>${
+    channel.name
+  }</b></h1>
   <table cellspacing="0" width="100%">${fragments.join('')}</table>
 </body>
   `;
@@ -266,8 +269,12 @@ export const startStandup = async room => {
     .add(room.length, 'minutes')
     .unix();
 
+  const NICK = await client.nick();
+
   // Slack magic to format the date in the user's timezone
-  const endsText = `<!date^${ends}^standup ends at {time}|standup ends in ${room.length} minutes>`;
+  const endsText = `<!date^${ends}^standup ends at {time}|standup ends in ${
+    room.length
+  } minutes>`;
   const ping = `${alert}, it's time for standup!\nClock is ticking, ${endsText}.\nUsage: \`${NICK} I am working on...\``;
 
   if (room.threading) {
@@ -523,6 +530,7 @@ export const getDeliquentUserIds = async standup => {
 
 export const warnStandup = async standup => {
   const userIds = await getDeliquentUserIds(standup);
+  const NICK = await client.nick();
 
   const opts = standup.threaded
     ? { thread_ts: standup.threadRoot, reply_broadcast: true }
@@ -544,6 +552,7 @@ export const warnStandup = async standup => {
 
 export const threatenStandup = async standup => {
   const userIds = await getDeliquentUserIds(standup);
+  const NICK = await client.nick();
 
   const opts = standup.threaded
     ? { thread_ts: standup.threadRoot, reply_broadcast: true }
