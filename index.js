@@ -28,7 +28,7 @@ client.left(channelId => {
 
 client.listen(parser);
 
-setInterval(async () => {
+const intervalId = setInterval(async () => {
   const schedules = await Schedule.scope('shouldStart').findAll({
     limit: 10,
   });
@@ -54,3 +54,9 @@ setInterval(async () => {
 
   standups.forEach(closeStandup);
 }, INTERVAL);
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received.');
+  client.stop();
+  clearInterval(intervalId);
+});
