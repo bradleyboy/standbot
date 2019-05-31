@@ -161,6 +161,8 @@ export const sendStandupSummaryEmail = async standup => {
     },
     (error, info) => {
       if (error) {
+        console.error('Could not send email: ', error);
+
         client.say(room.channelId, 'Error sending summary email.', {
           thread_ts: standup.threadRoot,
         });
