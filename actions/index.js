@@ -127,7 +127,7 @@ export const sendStandupSummaryEmail = async standup => {
       <tr style="background: ${alternateBackground()};">
         <td width="120" style="padding: 10px 0; text-align: center;">
           <img width="72" style="border-radius: 50%" src="${
-            user.profile.image_72
+            user.profile.image_192
           }">
           <p style="margin:0; font-weight: bold;">${
             user.profile.display_name
