@@ -245,8 +245,21 @@ export const rollbackStandup = async standup => {
   standup.destroy();
 };
 
+const getActiveRoomUsers = (room, options = {}) => {
+  return new Promise(async (resolve, reject) => {
+    const users = await room.getUsers(options);
+
+    resolve(
+      users.filter(({ userId }) => {
+        const slackUser = client.getUser(userId);
+        return slackUser && slackUser.deleted === false;
+      })
+    );
+  });
+};
+
 export const startStandup = async room => {
-  const users = await room.getUsers();
+  const users = await getActiveRoomUsers(room);
 
   if (users.length === 0) {
     return;
@@ -322,7 +335,7 @@ export const isHoliday = () => {
 
 export const startScheduledStandup = async schedule => {
   const room = await schedule.getRoom();
-  const users = await room.getUsers();
+  const users = await getActiveRoomUsers(room);
 
   if (users.length === 0) {
     return;
@@ -483,7 +496,7 @@ export const updateTopic = async standup => {
     return;
   }
 
-  const users = await room.getUsers();
+  const users = await getActiveRoomUsers(room);
 
   const ids = updates.map(update => update.userId);
 
@@ -525,7 +538,7 @@ export const getDeliquentUserIds = async standup => {
       }
     : {};
 
-  const users = await standup.room.getUsers(options);
+  const users = await getActiveRoomUsers(standup.room, options);
 
   return users.map(user => user.userId);
 };
