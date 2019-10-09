@@ -358,7 +358,7 @@ export const standupHasUpdatesFromAllUsers = async standup => {
   const room = await standup.getRoom();
 
   // Be nice to figure out a way to do this via sequelize model
-  const [countResult, usersCount] = await Promise.all([
+  const [countResult, activeUsers] = await Promise.all([
     sequelize.query(
       'SELECT COUNT(DISTINCT userId) AS count FROM updates WHERE standupId = ?',
       {
@@ -366,12 +366,12 @@ export const standupHasUpdatesFromAllUsers = async standup => {
         type: sequelize.QueryTypes.SELECT,
       }
     ),
-    room.countUsers(),
+    getActiveRoomUsers(room),
   ]);
 
   const [{ count }] = countResult;
 
-  return count === usersCount;
+  return count === activeUsers.length;
 };
 
 export const standupHasUpdateFromUserOfType = async (standup, user, type) => {
