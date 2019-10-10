@@ -267,9 +267,12 @@ const shouldSkip = slackUser => {
 
   return (
     slackUser.profile.status_emoji === ':palm_tree:' ||
+    slackUser.profile.status_emoji === ':face_with_thermometer:' ||
     text.indexOf('vacation') !== -1 ||
+    text.indexOf('vacay') !== -1 ||
     text.indexOf('pto') !== -1 ||
-    text.indexOf('ooo') !== -1
+    text.indexOf('ooo') !== -1 ||
+    text.indexOf('sick') !== -1
   );
 };
 
