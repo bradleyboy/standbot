@@ -32,8 +32,12 @@ import {
 
 const formatUpdateMessage = ({ type, message, meta }) => {
   if (type === UPDATE_SKIP) {
-    const reporter = client.getUser(meta.reporter);
-    return `${message} (according to @${reporter.profile.display_name})`;
+    if (meta && meta.reporter) {
+      const reporter = client.getUser(meta.reporter);
+      return `${message} (according to @${reporter.profile.display_name})`;
+    } else {
+      return `${message} (according to their Slack status)`;
+    }
   }
 
   return client.formatMessageAsPlain(message);
@@ -258,6 +262,22 @@ const getActiveRoomUsers = (room, options = {}) => {
   });
 };
 
+const shouldSkip = slackUser => {
+  const text = slackUser.profile.status_text.toLowerCase();
+
+  return (
+    slackUser.profile.status_emoji === ':palm_tree:' ||
+    text.indexOf('vacation') !== -1 ||
+    text.indexOf('pto') !== -1 ||
+    text.indexOf('ooo') !== -1
+  );
+};
+
+const getSlackStatus = user => {
+  const slackUser = client.getUser(user.userId);
+  return slackUser.profile.status_emoji + ' ' + slackUser.profile.status_text;
+};
+
 export const startStandup = async room => {
   const users = await getActiveRoomUsers(room);
 
@@ -265,7 +285,20 @@ export const startStandup = async room => {
     return;
   }
 
-  const alert = users.map(user => u(user.userId)).join(' ');
+  const actives = [];
+  const aways = [];
+
+  users.forEach(user => {
+    const slackUser = client.getUser(user.userId);
+
+    if (shouldSkip(slackUser)) {
+      aways.push(user);
+    } else {
+      actives.push(user);
+    }
+  });
+
+  const alert = actives.map(user => u(user.userId)).join(' ');
 
   const now = localdate();
 
@@ -279,6 +312,14 @@ export const startStandup = async room => {
     threaded: room.threading,
   });
 
+  if (aways.length) {
+    await Promise.all(
+      aways.map(u =>
+        addUpdateToStandup(standup, u, getSlackStatus(u), UPDATE_SKIP)
+      )
+    );
+  }
+
   const ends = moment()
     .utc()
     .add(room.length, 'minutes')
@@ -287,10 +328,15 @@ export const startStandup = async room => {
   const NICK = await client.nick();
 
   // Slack magic to format the date in the user's timezone
-  const endsText = `<!date^${ends}^standup ends at {time}|standup ends in ${
-    room.length
-  } minutes>`;
-  const ping = `${alert}, it's time for standup!\nClock is ticking, ${endsText}.\nUsage: \`${NICK} I am working on...\``;
+  const endsText = `<!date^${ends}^standup ends at {time}|standup ends in ${room.length} minutes>`;
+  let ping = `${alert}, it's time for standup!\nClock is ticking, ${endsText}.\nUsage: \`${NICK} I am working on...\``;
+
+  if (aways.length) {
+    ping += `\nI've automatically skipped ${commifyList(
+      aways,
+      getDisplayName
+    )} due to their Slack status.`;
+  }
 
   if (room.threading) {
     let resp;
@@ -483,6 +529,15 @@ export const maybeCloseStandup = async standup => {
   updateTopic(standup);
 };
 
+export const getDisplayName = user => {
+  const clientUser = client.getUser(user.userId);
+  const displayName = clientUser.profile.display_name.length
+    ? clientUser.profile.display_name
+    : clientUser.profile.real_name;
+
+  return preventAlerts(displayName);
+};
+
 export const updateTopic = async standup => {
   const [room, updates] = await Promise.all([
     standup.getRoom(),
@@ -502,8 +557,7 @@ export const updateTopic = async standup => {
 
   const nicks = users
     .map(user => {
-      const clientUser = client.getUser(user.userId);
-      const display = `${preventAlerts(clientUser.profile.display_name)}`;
+      const display = getDisplayName(user);
 
       if (ids.indexOf(user.id) === -1) {
         return display;
