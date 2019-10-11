@@ -17,14 +17,9 @@ export default async function(userId, channelId, message) {
     restoreTopic(standup);
     standup.destroy();
 
-    client.sayAt(
-      channelId,
-      userId,
-      'Standup canceled. See you next time, I guess.',
-      {
-        thread_ts: standup.threadRoot,
-      }
-    );
+    client.sayAt(channelId, userId, 'Standup cancelled, see you next time.', {
+      thread_ts: standup.threadRoot,
+    });
 
     if (standup.threaded) {
       client.unpin(channelId, standup.threadRoot);
@@ -52,9 +47,5 @@ export default async function(userId, channelId, message) {
 
   setScheduleLast(schedules[0]);
 
-  client.sayAt(
-    channelId,
-    userId,
-    'Standup canceled. See you next time, I guess.'
-  );
+  client.sayAt(channelId, userId, 'Standup cancelled, see you next time.');
 }

@@ -32,7 +32,7 @@ export default async function(userId, channelId, rawFlag, rawMessage) {
     client.sayAt(
       channelId,
       userId,
-      "Uh, this room doesn't have any standups scheduled. See .standup help for more info.",
+      "Oops, this room doesn't have any standups scheduled. See .standup help for more info.",
       sayOpts
     );
     return;

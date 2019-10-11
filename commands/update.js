@@ -21,7 +21,7 @@ export default async function(userId, channelId, message, rawMessage) {
     client.sayAt(
       channelId,
       userId,
-      "Uh, this room doesn't have any standups scheduled. See .standup help for more info."
+      "Oops, this room doesn't have any standups scheduled. See .standup help for more info."
     );
     return;
   }
@@ -41,7 +41,14 @@ export default async function(userId, channelId, message, rawMessage) {
   const inRoom = await room.hasUser(user);
 
   if (!inRoom) {
-    client.sayAt(channelId, userId, 'Do I know you?');
+    client.sayAt(
+      channelId,
+      userId,
+      `:wave: I don't believe we've met. Use \`.standup add \<@${userId}>\` to join this room's standups.`,
+      {
+        thread_ts: rawMessage.thread_ts,
+      }
+    );
     return;
   }
 
