@@ -33,7 +33,7 @@ const regex = new RegExp(
   `^(${validDaysForRegex})\\s+(?:(cancel)|(?:(\\d{1,2})(?:\\:(\\d{2}))?(am|pm)))`
 );
 
-export default async function(userId, channelId, args, rawMessage) {
+export default async function (userId, channelId, args, rawMessage) {
   const [room] = await Room.findOrCreate({
     where: { channelId },
   });
@@ -58,7 +58,7 @@ export default async function(userId, channelId, args, rawMessage) {
     }
 
     const string = schedules
-      .map(standup => {
+      .map((standup) => {
         return `${dayToString(standup.day)}s at ${prettyTime(
           standup.hour,
           standup.minutes
@@ -66,10 +66,9 @@ export default async function(userId, channelId, args, rawMessage) {
       })
       .join('\n');
 
+    const formattedChannel = await channel(channelId);
     const msgs = [
-      `Ok, here's the schedule for ${channel(
-        channelId
-      )}. Times are shown in each individual user's timezone.`,
+      `Ok, here's the schedule for ${formattedChannel}. Times are shown in each individual user's timezone.`,
       string,
     ];
 
@@ -100,7 +99,7 @@ export default async function(userId, channelId, args, rawMessage) {
     where: { day },
   });
 
-  const user = client.getUser(userId);
+  const user = await client.getUser(userId);
 
   const userTime = moment().tz(user.tz).hours(hour).minutes(minutes);
 

@@ -16,6 +16,7 @@ import {
 
 process.on('unhandledRejection', (err) => {
   if (process.env.DEBUG) {
+    console.trace(err);
     throw err;
   } else {
     console.log('unhandledRejection:', err);

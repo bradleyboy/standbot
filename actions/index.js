@@ -7,7 +7,6 @@ import { Room, Update, User, sequelize } from '../lib/db';
 import uniqueArray from 'unique-random-array';
 import transport from '../lib/email';
 import localdate from '../lib/localdate';
-import fetch from 'node-fetch';
 import emoji from 'node-emoji';
 import moment from 'moment-timezone';
 
@@ -30,10 +29,10 @@ import {
   SUMMARY_EMAIL_FROM_ADDRESS,
 } from '../constants';
 
-const formatUpdateMessage = ({ type, message, meta }) => {
+const formatUpdateMessage = async ({ type, message, meta }) => {
   if (type === UPDATE_SKIP) {
     if (meta && meta.reporter) {
-      const reporter = client.getUser(meta.reporter);
+      const reporter = await client.getUser(meta.reporter);
       return `${message} (according to @${reporter.profile.display_name})`;
     } else {
       return `${message} (according to their Slack status)`;
@@ -43,7 +42,7 @@ const formatUpdateMessage = ({ type, message, meta }) => {
   return client.formatMessageAsPlain(message);
 };
 
-export const closeStandup = standup => {
+export const closeStandup = (standup) => {
   standup
     .update({
       state: STANDUP_CLOSED,
@@ -81,10 +80,11 @@ export const closeStandup = standup => {
       } else {
         const out = ["Ending standup. Here's a summary:"];
 
-        updates.forEach(update => {
-          const message = formatUpdateMessage(update);
+        for (let i = 0; i < updates.length; i++) {
+          const update = updates[i];
+          const message = await formatUpdateMessage(update);
           out.push(`${u(update.user.userId)}: ${message}`);
-        });
+        }
 
         const summary = out.join('\n');
         client.say(room.channelId, summary, {
@@ -94,7 +94,7 @@ export const closeStandup = standup => {
     });
 };
 
-export const sendStandupSummaryEmail = async standup => {
+export const sendStandupSummaryEmail = async (standup) => {
   const [room, updates] = await Promise.all([
     standup.getRoom(),
     standup.getUpdates({
@@ -106,26 +106,28 @@ export const sendStandupSummaryEmail = async standup => {
   const map = {};
   const alternateBackground = uniqueArray(['#fbfbfb', '#ffffff']);
 
-  updates.forEach(update => {
+  for (let i = 0; i < updates.length; i++) {
+    const update = updates[i];
     if (!map[update.user.userId]) {
       map[update.user.userId] = [];
     }
 
-    const message = formatForEmail(formatUpdateMessage(update));
+    const updateMessage = await formatUpdateMessage(update);
+    const message = formatForEmail(updateMessage);
 
     map[update.user.userId].push(message);
-  });
+  }
 
   const fragments = [];
-  const channel = client.getChannel(room.channelId);
+  const channel = await client.getChannel(room.channelId);
 
   for (let i of Object.keys(map)) {
     const updates = map[i]
       .map(
-        update => `<p style="margin: 0 0 10px;">${emoji.emojify(update)}</p>`
+        (update) => `<p style="margin: 0 0 10px;">${emoji.emojify(update)}</p>`
       )
       .join('');
-    const user = client.getUser(i);
+    const user = await client.getUser(i);
 
     fragments.push(`
       <tr style="background: ${alternateBackground()};">
@@ -184,7 +186,7 @@ export const sendStandupSummaryEmail = async standup => {
   );
 };
 
-export const restoreTopic = async standup => {
+export const restoreTopic = async (standup) => {
   const room = await standup.getRoom();
 
   if (standup.threaded) {
@@ -202,10 +204,10 @@ export const restoreTopic = async standup => {
     return;
   }
 
-  client.setTopic(room.channelId, standup.topic);
+  return client.setTopic(room.channelId, standup.topic);
 };
 
-export const setScheduleLast = schedule => {
+export const setScheduleLast = (schedule) => {
   const now = localdate();
   const last = `${now.month}/${now.date}`;
 
@@ -218,7 +220,7 @@ export const setScheduleLast = schedule => {
  * Only do the final nag if the standup is <= 15 min long.
  * All others do both nags.
  */
-const getInitialNagState = minutes => {
+const getInitialNagState = (minutes) => {
   if (minutes < 10) {
     return NAGGED_THREAT;
   }
@@ -230,7 +232,7 @@ const getInitialNagState = minutes => {
   return NAGGED_NO;
 };
 
-export const rollbackStandup = async standup => {
+export const rollbackStandup = async (standup) => {
   const room = await standup.getRoom();
 
   const { day, raw } = localdate();
@@ -249,20 +251,23 @@ export const rollbackStandup = async standup => {
   standup.destroy();
 };
 
-const getActiveRoomUsers = (room, options = {}) => {
-  return new Promise(async (resolve, reject) => {
-    const users = await room.getUsers(options);
+const getActiveRoomUsers = async (room, options = {}) => {
+  const users = await room.getUsers(options);
+  const activeUsers = [];
 
-    resolve(
-      users.filter(({ userId }) => {
-        const slackUser = client.getUser(userId);
-        return slackUser && slackUser.deleted === false;
-      })
-    );
-  });
+  for (let i = 0; i < users.length; i++) {
+    const user = users[i];
+    const slackUser = await client.getUser(user.userId);
+
+    if (slackUser && slackUser.deleted === false) {
+      activeUsers.push(user);
+    }
+  }
+
+  return activeUsers;
 };
 
-const shouldSkip = slackUser => {
+const shouldSkip = (slackUser) => {
   const text = slackUser.profile.status_text.toLowerCase();
 
   return (
@@ -276,12 +281,12 @@ const shouldSkip = slackUser => {
   );
 };
 
-const getSlackStatus = user => {
-  const slackUser = client.getUser(user.userId);
+const getSlackStatus = async (user) => {
+  const slackUser = await client.getUser(user.userId);
   return slackUser.profile.status_emoji + ' ' + slackUser.profile.status_text;
 };
 
-export const startStandup = async room => {
+export const startStandup = async (room) => {
   const users = await getActiveRoomUsers(room);
 
   if (users.length === 0) {
@@ -291,17 +296,18 @@ export const startStandup = async room => {
   const actives = [];
   const aways = [];
 
-  users.forEach(user => {
-    const slackUser = client.getUser(user.userId);
+  for (let i = 0; i < users.length; i++) {
+    const user = users[i];
+    const slackUser = await client.getUser(user.userId);
 
     if (shouldSkip(slackUser)) {
       aways.push(user);
     } else {
       actives.push(user);
     }
-  });
+  }
 
-  const alert = actives.map(user => u(user.userId)).join(' ');
+  const alert = actives.map((user) => u(user.userId)).join(' ');
 
   const now = localdate();
 
@@ -316,17 +322,15 @@ export const startStandup = async room => {
   });
 
   if (aways.length) {
-    await Promise.all(
-      aways.map(u =>
-        addUpdateToStandup(standup, u, getSlackStatus(u), UPDATE_SKIP)
-      )
-    );
+    for (let i = 0; i < aways.length; i++) {
+      const u = aways[i]
+      const message = await getSlackStatus(u);
+
+      await addUpdateToStandup(standup, u, message, UPDATE_SKIP);
+    }
   }
 
-  const ends = moment()
-    .utc()
-    .add(room.length, 'minutes')
-    .unix();
+  const ends = moment().utc().add(room.length, 'minutes').unix();
 
   const NICK = await client.nick();
 
@@ -335,9 +339,13 @@ export const startStandup = async room => {
   let ping = `${alert}, it's time for standup!\nClock is ticking, ${endsText}.\nUsage: \`${NICK} I am working on...\``;
 
   if (aways.length) {
+    const displayNames = [];
+    for (let i = 0; i < aways.length; i++) {
+      displayNames.push(await getDisplayName(aways[i]));
+    }
+
     ping += `\nI've automatically skipped ${commifyList(
-      aways,
-      getDisplayName
+      displayNames
     )} due to their Slack status.`;
   }
 
@@ -382,7 +390,7 @@ export const isHoliday = () => {
   return HOLIDAYS.includes(`${month}/${date}`);
 };
 
-export const startScheduledStandup = async schedule => {
+export const startScheduledStandup = async (schedule) => {
   const room = await schedule.getRoom();
   const users = await getActiveRoomUsers(room);
 
@@ -403,7 +411,7 @@ export const startScheduledStandup = async schedule => {
   startStandup(room);
 };
 
-export const standupHasUpdatesFromAllUsers = async standup => {
+export const standupHasUpdatesFromAllUsers = async (standup) => {
   const room = await standup.getRoom();
 
   // Be nice to figure out a way to do this via sequelize model
@@ -444,7 +452,7 @@ export const deleteUpdatesFromUserOfType = (standup, user, type) => {
   });
 };
 
-export const completeStandup = async standup => {
+export const completeStandup = async (standup) => {
   const room = await standup.getRoom();
 
   standup
@@ -502,7 +510,7 @@ export const addUpdateToStandup = (
   const messages = message.split('\n');
 
   // Store multiline messages as separate updates
-  const promises = messages.map(message => {
+  const promises = messages.map((message) => {
     const update = Update.build({
       message,
       type,
@@ -518,7 +526,7 @@ export const addUpdateToStandup = (
   return Promise.all(promises);
 };
 
-export const maybeCloseStandup = async standup => {
+export const maybeCloseStandup = async (standup) => {
   if (standup.state === STANDUP_COMPLETE) {
     return;
   }
@@ -532,8 +540,8 @@ export const maybeCloseStandup = async standup => {
   updateTopic(standup);
 };
 
-export const getDisplayName = user => {
-  const clientUser = client.getUser(user.userId);
+export const getDisplayName = async (user) => {
+  const clientUser = await client.getUser(user.userId);
   const displayName = clientUser.profile.display_name.length
     ? clientUser.profile.display_name
     : clientUser.profile.real_name;
@@ -541,7 +549,7 @@ export const getDisplayName = user => {
   return preventAlerts(displayName);
 };
 
-export const updateTopic = async standup => {
+export const updateTopic = async (standup) => {
   const [room, updates] = await Promise.all([
     standup.getRoom(),
     standup.getUpdates({ attributes: ['userId'] }),
@@ -556,21 +564,23 @@ export const updateTopic = async standup => {
 
   const users = await getActiveRoomUsers(room);
 
-  const ids = updates.map(update => update.userId);
+  const ids = updates.map((update) => update.userId);
 
-  const nicks = users
-    .map(user => {
-      const display = getDisplayName(user);
+  const nicks = [];
 
-      if (ids.indexOf(user.id) === -1) {
-        return display;
-      }
+  for (let i = 0; i < users.length; i++) {
+    const user = users[i];
+    const display = await getDisplayName(user);
 
-      return `~${display}~`;
-    })
-    .join(' ');
+    if (ids.indexOf(user.id) === -1) {
+      nicks.push(display);
+      continue;
+    }
 
-  const topic = `Standup in progress: ${nicks}`;
+    nicks.push(`~${display}~`);
+  }
+
+  const topic = `Standup in progress: ${nicks.join(' ')}`;
 
   if (standup.threaded) {
     if (standup.threadRoot) {
@@ -581,9 +591,9 @@ export const updateTopic = async standup => {
   }
 };
 
-export const getDeliquentUserIds = async standup => {
+export const getDeliquentUserIds = async (standup) => {
   const updates = await standup.getUpdates({ attributes: ['userId'] });
-  const filterIds = updates.map(update => update.userId);
+  const filterIds = updates.map((update) => update.userId);
 
   const options = filterIds.length
     ? {
@@ -597,10 +607,10 @@ export const getDeliquentUserIds = async standup => {
 
   const users = await getActiveRoomUsers(standup.room, options);
 
-  return users.map(user => user.userId);
+  return users.map((user) => user.userId);
 };
 
-export const warnStandup = async standup => {
+export const warnStandup = async (standup) => {
   const userIds = await getDeliquentUserIds(standup);
   const NICK = await client.nick();
 
@@ -622,7 +632,7 @@ export const warnStandup = async standup => {
   });
 };
 
-export const threatenStandup = async standup => {
+export const threatenStandup = async (standup) => {
   const userIds = await getDeliquentUserIds(standup);
   const NICK = await client.nick();
 

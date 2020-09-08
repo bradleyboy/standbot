@@ -7,7 +7,7 @@ import {
   startStandup,
 } from '../actions';
 
-export default async function(userId, channelId, arg, rawMessage) {
+export default async function (userId, channelId, _, rawMessage) {
   const [room, standup, user] = await getRoomAndStandupAndUser(
     channelId,
     userId

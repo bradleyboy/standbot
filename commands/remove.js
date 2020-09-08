@@ -4,7 +4,7 @@ import { Room, User } from '../lib/db';
 import { user as u, channel as c, commifyList } from '../formatters';
 
 const removeUsersFromStandup = (userIds, room) => {
-  return new Promise(async resolve => {
+  return new Promise(async (resolve) => {
     const removed = [];
     const skipped = [];
 
@@ -18,7 +18,7 @@ const removeUsersFromStandup = (userIds, room) => {
       const exists = await room.hasUser(user);
 
       if (exists) {
-        const result = await room.removeUser(user);
+        await room.removeUser(user);
         removed.push(userId);
         continue;
       }
@@ -30,7 +30,7 @@ const removeUsersFromStandup = (userIds, room) => {
   });
 };
 
-export default async function(driverId, channelId, arg, rawMessage) {
+export default async function (driverId, channelId, arg, rawMessage) {
   const users = arg.match(/<@U[0-9A-Z]+>/g);
 
   if (!users) {
@@ -42,7 +42,7 @@ export default async function(driverId, channelId, arg, rawMessage) {
     return;
   }
 
-  const userIds = users.map(user => user.replace(/[^0-9A-Z]/g, ''));
+  const userIds = users.map((user) => user.replace(/[^0-9A-Z]/g, ''));
 
   const room = await Room.findOne({
     where: { channelId },
@@ -62,11 +62,13 @@ export default async function(driverId, channelId, arg, rawMessage) {
   var messages = [];
 
   if (result.removed.length) {
+    const channel = await c(channelId);
+
     messages.push(
       `Ok, I've removed ${commifyList(
         result.removed,
         u
-      )} from the standup for ${c(channelId)}.`
+      )} from the standup for ${channel}.`
     );
   }
 

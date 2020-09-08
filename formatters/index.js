@@ -17,7 +17,7 @@ const displayMap = {
   6: 'Saturday',
 };
 
-export const dayToString = dayInt => {
+export const dayToString = (dayInt) => {
   return displayMap[dayInt];
 };
 
@@ -40,7 +40,7 @@ export const prettyTime = (hours, minutes = 0) => {
   return `<!date^${time}^{time}|${fallback}>`;
 };
 
-const linkJira = message => {
+const linkJira = (message) => {
   if (!jiraDomain || !jiraDomain.length) {
     return message;
   }
@@ -52,7 +52,7 @@ const linkJira = message => {
   });
 };
 
-const linkPullRequest = message => {
+const linkPullRequest = (message) => {
   if (!githubDomain || !githubDomain.length) {
     return message;
   }
@@ -62,24 +62,24 @@ const linkPullRequest = message => {
   });
 };
 
-const convertMarkdown = message => {
+const convertMarkdown = (message) => {
   return md.renderInline(message);
 };
 
 const linkers = [convertMarkdown, linkJira, linkPullRequest];
 
-export const formatForEmail = message => {
+export const formatForEmail = (message) => {
   return linkers.reduce((formattedMessage, linker) => {
     return linker(formattedMessage);
   }, message);
 };
 
-export const user = userId => {
+export const user = (userId) => {
   return `<@${userId}>`;
 };
 
-export const channel = channelId => {
-  const channel = client.getChannel(channelId);
+export const channel = async (channelId) => {
+  const channel = await client.getChannel(channelId);
 
   if (channel.is_group) {
     // private group
@@ -89,7 +89,7 @@ export const channel = channelId => {
   return `<#${channelId}>`;
 };
 
-export const commifyList = (list, itemFormatter = e => e) => {
+export const commifyList = (list, itemFormatter = (e) => e) => {
   const formattedItems = list.map(itemFormatter);
 
   if (list.length === 1) {
@@ -105,7 +105,7 @@ export const commifyList = (list, itemFormatter = e => e) => {
   return `${formattedItems.join(', ')} and ${lastItem}`;
 };
 
-export const preventAlerts = str => {
+export const preventAlerts = (str) => {
   if (str.length === 1) {
     // Nothing we can do here
     return str;

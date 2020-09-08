@@ -7,11 +7,8 @@ import {
   restoreTopic,
 } from '../actions';
 
-export default async function(userId, channelId, message) {
-  const [room, standup, user] = await getRoomAndStandupAndUser(
-    channelId,
-    userId
-  );
+export default async function (userId, channelId, message) {
+  const [room, standup] = await getRoomAndStandupAndUser(channelId, userId);
 
   if (standup) {
     restoreTopic(standup);

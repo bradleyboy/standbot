@@ -1,5 +1,4 @@
 import client from '../lib/client';
-import randomResponses from '../utils/randomResponses';
 
 import {
   getRoomAndStandupAndUser,
@@ -11,7 +10,7 @@ import {
 
 import { UPDATE_SKIP, UPDATE_REGULAR } from '../constants';
 
-export default async function(userId, channelId, message, rawMessage) {
+export default async function (userId, channelId, message, rawMessage) {
   const [room, standup, user] = await getRoomAndStandupAndUser(
     channelId,
     userId

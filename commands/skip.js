@@ -1,5 +1,4 @@
 import client from '../lib/client';
-import randomResponses from '../utils/randomResponses';
 import { User } from '../lib/db';
 
 import {
@@ -13,7 +12,7 @@ import { UPDATE_SKIP, UPDATE_REGULAR } from '../constants';
 
 import { user as u } from '../formatters';
 
-export default async function(fromUserId, channelId, args, rawMessage) {
+export default async function (fromUserId, channelId, args, rawMessage) {
   const [userFragment, ...message] = args.trim().split(' ');
   const userId = client.parseUser(userFragment);
   const [room, standup, user] = await getRoomAndStandupAndUser(

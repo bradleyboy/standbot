@@ -3,11 +3,8 @@ import { Room } from '../lib/db';
 
 import { getRoomAndStandupAndUser } from '../actions';
 
-export default async function(userId, channelId, rawFlag, rawMessage) {
-  const [room, standup, user] = await getRoomAndStandupAndUser(
-    channelId,
-    userId
-  );
+export default async function (userId, channelId, rawFlag, rawMessage) {
+  const [room] = await getRoomAndStandupAndUser(channelId, userId);
   const flag = rawFlag.trim();
 
   if (flag !== 'on' && flag !== 'off') {

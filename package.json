@@ -5,6 +5,8 @@
   "main": "index.js",
   "private": true,
   "dependencies": {
+    "@slack/rtm-api": "^5.0.5",
+    "@slack/web-api": "^5.11.0",
     "emojify.js": "^1.1.0",
     "markdown-it": "^7.0.0",
     "moment-timezone": "^0.4.1",
@@ -14,9 +16,8 @@
     "nodemailer-sendmail-transport": "^1.0.0",
     "sequelize": "^3.10.0",
     "sequelize-json": "^2.1.2",
-    "sqlite3": "^3.1.0",
-    "unique-random-array": "^1.0.0",
-    "slack-client": "~2.0.6"
+    "sqlite3": "^4.2.0",
+    "unique-random-array": "^1.0.0"
   },
   "devDependencies": {
     "babel": "^5.8.23"

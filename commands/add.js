@@ -4,7 +4,7 @@ import { Room, User } from '../lib/db';
 import { user as u, channel as c, commifyList } from '../formatters';
 
 const addUsersToStandup = (userIds, room) => {
-  return new Promise(async resolve => {
+  return new Promise(async (resolve) => {
     const alreadyInRoom = [];
     const added = [];
 
@@ -22,7 +22,7 @@ const addUsersToStandup = (userIds, room) => {
         continue;
       }
 
-      const result = await room.addUser(user);
+      await room.addUser(user);
       added.push(userId);
     }
 
@@ -30,8 +30,7 @@ const addUsersToStandup = (userIds, room) => {
   });
 };
 
-export default async function(driverId, channelId, arg, rawMessage) {
-  const driver = u(driverId);
+export default async function (driverId, channelId, arg, rawMessage) {
   const users = arg.match(/<@U[0-9A-Z]+>/g);
 
   if (!users) {
@@ -43,7 +42,7 @@ export default async function(driverId, channelId, arg, rawMessage) {
     return;
   }
 
-  const userIds = users.map(user => user.replace(/[^0-9A-Z]/g, ''));
+  const userIds = users.map((user) => user.replace(/[^0-9A-Z]/g, ''));
 
   const [room] = await Room.findOrCreate({
     where: { channelId },
@@ -54,10 +53,13 @@ export default async function(driverId, channelId, arg, rawMessage) {
   var messages = [];
 
   if (result.added.length) {
+    const channel = await c(channelId);
+
     messages.push(
-      `Ok, I've added ${commifyList(result.added, u)} to the standup for ${c(
-        channelId
-      )}.`
+      `Ok, I've added ${commifyList(
+        result.added,
+        u
+      )} to the standup for ${channel}.`
     );
   }
 
