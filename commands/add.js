@@ -1,4 +1,4 @@
-import client from '../lib/client';
+import client, { USER_FRAGMENT_REGEX } from '../lib/client';
 import { Room, User } from '../lib/db';
 
 import { user as u, channel as c, commifyList } from '../formatters';
@@ -31,7 +31,7 @@ const addUsersToStandup = (userIds, room) => {
 };
 
 export default async function (driverId, channelId, arg, rawMessage) {
-  const users = arg.match(/<@U[0-9A-Z]+>/g);
+  const users = arg.match(new RegExp(USER_FRAGMENT_REGEX, 'g'));
 
   if (!users) {
     client.sayAt(
