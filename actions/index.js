@@ -42,56 +42,51 @@ const formatUpdateMessage = async ({ type, message, meta }) => {
   return client.formatMessageAsPlain(message);
 };
 
-export const closeStandup = (standup) => {
-  standup
-    .update({
-      state: STANDUP_CLOSED,
-    })
-    .then(async () => {
-      const updates = await standup.getUpdates({
-        include: [User],
-        order: 'type asc, updates.userId asc, updates.id asc',
-      });
+export const closeStandup = async (standup) => {
+  await standup.update({ state: STANDUP_CLOSED });
+  const updates = await standup.getUpdates({
+    include: [User],
+    order: 'type asc, updates.userId asc, updates.id asc',
+  });
 
-      const room = await standup.getRoom();
+  const room = await standup.getRoom();
 
-      if (room.topic || standup.threaded) {
-        restoreTopic(standup);
+  if (room.topic || standup.threaded) {
+    await restoreTopic(standup);
+  }
+
+  if (standup.threaded) {
+    await client.unpin(room.channelId, standup.threadRoot);
+  }
+
+  if (!updates.length) {
+    await client.say(
+      room.channelId,
+      "Ending standup. No updates were given, so there isn't a summary.",
+      {
+        thread_ts: standup.threadRoot,
       }
+    );
 
-      if (standup.threaded) {
-        client.unpin(room.channelId, standup.threadRoot);
-      }
+    return;
+  }
 
-      if (!updates.length) {
-        client.say(
-          room.channelId,
-          "Ending standup. No updates were given, so there isn't a summary.",
-          {
-            thread_ts: standup.threadRoot,
-          }
-        );
+  if (room.email) {
+    sendStandupSummaryEmail(standup);
+  } else {
+    const out = ["Ending standup. Here's a summary:"];
 
-        return;
-      }
+    for (let i = 0; i < updates.length; i++) {
+      const update = updates[i];
+      const message = await formatUpdateMessage(update);
+      out.push(`${u(update.user.userId)}: ${message}`);
+    }
 
-      if (room.email) {
-        sendStandupSummaryEmail(standup);
-      } else {
-        const out = ["Ending standup. Here's a summary:"];
-
-        for (let i = 0; i < updates.length; i++) {
-          const update = updates[i];
-          const message = await formatUpdateMessage(update);
-          out.push(`${u(update.user.userId)}: ${message}`);
-        }
-
-        const summary = out.join('\n');
-        client.say(room.channelId, summary, {
-          thread_ts: standup.threadRoot,
-        });
-      }
+    const summary = out.join('\n');
+    return client.say(room.channelId, summary, {
+      thread_ts: standup.threadRoot,
     });
+  }
 };
 
 export const sendStandupSummaryEmail = async (standup) => {
@@ -157,33 +152,39 @@ export const sendStandupSummaryEmail = async (standup) => {
 
   const date = moment.tz('America/New_York').format('MMMM Do YYYY');
 
-  transport.sendMail(
-    {
-      from: SUMMARY_EMAIL_FROM_ADDRESS,
-      to: room.email,
-      subject: `Standup summary for ${channel.name} (${date})`,
-      replyTo: room.email,
-      html,
-    },
-    (error, info) => {
-      if (error) {
-        console.error('Could not send email: ', error);
+  return new Promise((resolve) => {
+    transport.sendMail(
+      {
+        from: SUMMARY_EMAIL_FROM_ADDRESS,
+        to: room.email,
+        subject: `Standup summary for ${channel.name} (${date})`,
+        replyTo: room.email,
+        html,
+      },
+      async (error) => {
+        if (error) {
+          console.error('Could not send email: ', error);
 
-        client.say(room.channelId, 'Error sending summary email.', {
-          thread_ts: standup.threadRoot,
-        });
-        return;
-      }
+          await client.say(room.channelId, 'Error sending summary email.', {
+            thread_ts: standup.threadRoot,
+          });
 
-      client.say(
-        room.channelId,
-        `Ending standup, summary sent to ${room.email}`,
-        {
-          thread_ts: standup.threadRoot,
+          resolve();
+          return;
         }
-      );
-    }
-  );
+
+        await client.say(
+          room.channelId,
+          `Ending standup, summary sent to ${room.email}`,
+          {
+            thread_ts: standup.threadRoot,
+          }
+        );
+
+        resolve();
+      }
+    );
+  });
 };
 
 export const restoreTopic = async (standup) => {
@@ -211,7 +212,7 @@ export const setScheduleLast = (schedule) => {
   const now = localdate();
   const last = `${now.month}/${now.date}`;
 
-  schedule.update({ last });
+  return schedule.update({ last });
 };
 
 /*
@@ -243,12 +244,12 @@ export const rollbackStandup = async (standup) => {
 
   if (scheduled.length) {
     const last = raw.subtract(1, 'days').format('M/D');
-    scheduled[0].update({
+    await scheduled[0].update({
       last,
     });
   }
 
-  standup.destroy();
+  return standup.destroy();
 };
 
 const getActiveRoomUsers = async (room, options = {}) => {
@@ -288,8 +289,9 @@ const getSlackStatus = async (user) => {
 
 export const startStandup = async (room) => {
   const users = await getActiveRoomUsers(room);
+  const channel = await client.getChannel(room.channelId);
 
-  if (users.length === 0) {
+  if (channel.is_archived || users.length === 0) {
     return;
   }
 
@@ -323,7 +325,7 @@ export const startStandup = async (room) => {
 
   if (aways.length) {
     for (let i = 0; i < aways.length; i++) {
-      const u = aways[i]
+      const u = aways[i];
       const message = await getSlackStatus(u);
 
       await addUpdateToStandup(standup, u, message, UPDATE_SKIP);
@@ -373,7 +375,7 @@ export const startStandup = async (room) => {
     });
   } else if (room.announce) {
     try {
-      const resp = await client.say(room.channelId, ping);
+      await client.say(room.channelId, ping);
     } catch (e) {
       return rollbackStandup(standup);
     }
@@ -381,7 +383,8 @@ export const startStandup = async (room) => {
 
   const topic = await client.getTopic(room.channelId);
 
-  standup.update({ topic }).then(() => updateTopic(standup));
+  await standup.update({ topic });
+  return updateTopic(standup);
 };
 
 export const isHoliday = () => {
@@ -392,23 +395,34 @@ export const isHoliday = () => {
 
 export const startScheduledStandup = async (schedule) => {
   const room = await schedule.getRoom();
+
+  const channel = await client.getChannel(room.channelId);
+
+  if (channel.is_archived) {
+    console.log(
+      'startScheduledStandup called for archived channel, skipping and marking channel inactive'
+    );
+
+    return room.update({ active: false });
+  }
+
   const users = await getActiveRoomUsers(room);
 
   if (users.length === 0) {
     return;
   }
 
-  setScheduleLast(schedule);
+  await setScheduleLast(schedule);
 
   if (isHoliday()) {
-    client.say(
+    return client.say(
       room.channelId,
       "Standup scheduled, but today is a US company holiday. If you'd still like to have a standup, use `.standup start`, otherwise enjoy your day off!"
     );
     return;
   }
 
-  startStandup(room);
+  return startStandup(room);
 };
 
 export const standupHasUpdatesFromAllUsers = async (standup) => {
@@ -584,10 +598,10 @@ export const updateTopic = async (standup) => {
 
   if (standup.threaded) {
     if (standup.threadRoot) {
-      client.update(room.channelId, standup.threadRoot, topic);
+      return client.update(room.channelId, standup.threadRoot, topic);
     }
   } else {
-    client.setTopic(room.channelId, topic);
+    return client.setTopic(room.channelId, topic);
   }
 };
 
@@ -618,7 +632,7 @@ export const warnStandup = async (standup) => {
     ? { thread_ts: standup.threadRoot, reply_broadcast: true }
     : {};
 
-  client.say(
+  await client.say(
     standup.room.channelId,
     `${commifyList(
       userIds,
@@ -627,7 +641,7 @@ export const warnStandup = async (standup) => {
     opts
   );
 
-  standup.update({
+  return standup.update({
     nagged: NAGGED_WARN,
   });
 };
@@ -640,7 +654,7 @@ export const threatenStandup = async (standup) => {
     ? { thread_ts: standup.threadRoot, reply_broadcast: true }
     : {};
 
-  client.say(
+  await client.say(
     standup.room.channelId,
     `${commifyList(
       userIds,
@@ -649,7 +663,7 @@ export const threatenStandup = async (standup) => {
     opts
   );
 
-  standup.update({
+  return standup.update({
     nagged: NAGGED_THREAT,
   });
 };

@@ -48,6 +48,40 @@ async function migrateUsers() {
   console.log(`User migration complete: ${migrated} migrated out of ${total}`);
 }
 
+let loopStart = Date.now();
+async function runLoop() {
+  console.log('Loop begin, time since last run: ', Date.now() - loopStart);
+  loopStart = Date.now();
+
+  const schedules = await Schedule.scope('shouldStart').findAll({
+    limit: 10,
+  });
+
+  await Promise.all(schedules.map(startScheduledStandup));
+
+  const nagWarn = await Standup.scope('shouldWarn').findAll({
+    include: [Room],
+  });
+
+  await Promise.all(nagWarn.map(warnStandup));
+
+  const nagThreat = await Standup.scope('shouldThreat').findAll({
+    include: [Room],
+  });
+
+  await Promise.all(nagThreat.map(threatenStandup));
+
+  const standups = await Standup.scope('shouldClose').findAll({
+    include: [Room],
+    limit: 1,
+  });
+
+  await Promise.all(standups.map(closeStandup));
+
+  console.log('Loop end, time spent: ', Date.now() - loopStart);
+  setTimeout(runLoop, INTERVAL);
+}
+
 function start() {
   client.joined((channel) => {
     setChannelActiveStatus(channel.id, true);
@@ -59,32 +93,7 @@ function start() {
 
   client.listen(parser);
 
-  intervalId = setInterval(async () => {
-    const schedules = await Schedule.scope('shouldStart').findAll({
-      limit: 10,
-    });
-
-    schedules.forEach(startScheduledStandup);
-
-    const nagWarn = await Standup.scope('shouldWarn').findAll({
-      include: [Room],
-    });
-
-    nagWarn.forEach(warnStandup);
-
-    const nagThreat = await Standup.scope('shouldThreat').findAll({
-      include: [Room],
-    });
-
-    nagThreat.forEach(threatenStandup);
-
-    const standups = await Standup.scope('shouldClose').findAll({
-      include: [Room],
-      limit: 1,
-    });
-
-    standups.forEach(closeStandup);
-  }, INTERVAL);
+  setTimeout(runLoop, INTERVAL);
 }
 
 process.on('SIGTERM', () => {
