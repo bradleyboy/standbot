@@ -44,6 +44,15 @@ const formatUpdateMessage = async ({ type, message, meta }) => {
 
 export const closeStandup = async (standup) => {
   await standup.update({ state: STANDUP_CLOSED });
+
+  const { date } = localdate();
+
+  // Bail out here for any old standups that ended up in a bad state
+  // and are closing on a different day than they started.
+  if (date !== standup.day) {
+    return;
+  }
+
   const updates = await standup.getUpdates({
     include: [User],
     order: 'type asc, updates.userId asc, updates.id asc',
