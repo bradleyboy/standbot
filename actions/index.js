@@ -360,17 +360,18 @@ export const startStandup = async (room) => {
         ':hourglass: Beginning standup...'
       );
     } catch (e) {
+      console.log('initial standup message failed, rolling back', e);
       return rollbackStandup(standup);
     }
 
-    client.say(room.channelId, ping, {
+    await client.say(room.channelId, ping, {
       thread_ts: resp.ts,
       reply_broadcast: true,
     });
 
-    client.pin(room.channelId, resp.ts);
+    await client.pin(room.channelId, resp.ts);
 
-    standup.update({
+    await standup.update({
       threadRoot: resp.ts,
     });
   } else if (room.announce) {
@@ -398,9 +399,9 @@ export const startScheduledStandup = async (schedule) => {
 
   const channel = await client.getChannel(room.channelId);
 
-  if (channel.is_archived) {
+  if (channel.is_archived || !channel.is_member) {
     console.log(
-      'startScheduledStandup called for archived channel, skipping and marking channel inactive'
+      'startScheduledStandup called for archived channel or a channel the bot is no longer a member of, skipping and marking channel inactive'
     );
 
     return room.update({ active: false });
