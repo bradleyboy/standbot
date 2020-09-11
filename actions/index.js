@@ -43,6 +43,42 @@ const formatUpdateMessage = async ({ type, message, meta }) => {
 };
 
 export const closeStandup = async (standup) => {
+  const room = await standup.getRoom();
+
+  try {
+    const channel = await client.getChannel(room.channelId);
+
+    if (channel.is_archived || !channel.is_member) {
+      console.log(
+        'closeStandup called for archived channel or a channel the bot is no longer a member of, skipping and marking channel inactive'
+      );
+
+      await standup.update({
+        state: STANDUP_CLOSED,
+      });
+
+      return standup.room.update({ active: false });
+    }
+  } catch (e) {
+    if (
+      e.code === 'slack_webapi_platform_error' &&
+      e.data.error === 'channel_not_found'
+    ) {
+      console.log(
+        'closeStandup: channel no longer exists, marking as inactive'
+      );
+
+      await standup.update({
+        state: STANDUP_CLOSED,
+      });
+
+      return room.update({ active: false });
+    }
+
+    throw e;
+    return;
+  }
+
   await standup.update({ state: STANDUP_CLOSED });
 
   const { date } = localdate();
@@ -57,8 +93,6 @@ export const closeStandup = async (standup) => {
     include: [User],
     order: 'type asc, updates.userId asc, updates.id asc',
   });
-
-  const room = await standup.getRoom();
 
   if (room.topic || standup.threaded) {
     await restoreTopic(standup);
@@ -406,14 +440,29 @@ export const isHoliday = () => {
 export const startScheduledStandup = async (schedule) => {
   const room = await schedule.getRoom();
 
-  const channel = await client.getChannel(room.channelId);
+  try {
+    const channel = await client.getChannel(room.channelId);
 
-  if (channel.is_archived || !channel.is_member) {
-    console.log(
-      'startScheduledStandup called for archived channel or a channel the bot is no longer a member of, skipping and marking channel inactive'
-    );
+    if (channel.is_archived || !channel.is_member) {
+      console.log(
+        'startScheduledStandup called for archived channel or a channel the bot is no longer a member of, skipping and marking channel inactive'
+      );
 
-    return room.update({ active: false });
+      return room.update({ active: false });
+    }
+  } catch (e) {
+    if (
+      e.code === 'slack_webapi_platform_error' &&
+      e.data.error === 'channel_not_found'
+    ) {
+      console.log(
+        'startScheduledStandup: channel no longer exists, marking as inactive'
+      );
+      return room.update({ active: false });
+    }
+
+    throw e;
+    return;
   }
 
   const users = await getActiveRoomUsers(room);
@@ -635,6 +684,38 @@ export const getDeliquentUserIds = async (standup) => {
 };
 
 export const warnStandup = async (standup) => {
+  try {
+    const channel = await client.getChannel(standup.room.channelId);
+
+    if (channel.is_archived || !channel.is_member) {
+      console.log(
+        'warnStandup called for archived channel or a channel the bot is no longer a member of, skipping and marking channel inactive'
+      );
+
+      await standup.update({
+        state: STANDUP_CLOSED,
+      });
+
+      return standup.room.update({ active: false });
+    }
+  } catch (e) {
+    if (
+      e.code === 'slack_webapi_platform_error' &&
+      e.data.error === 'channel_not_found'
+    ) {
+      console.log('warnStandup: channel no longer exists, marking as inactive');
+
+      await standup.update({
+        state: STANDUP_CLOSED,
+      });
+
+      return standup.room.update({ active: false });
+    }
+
+    throw e;
+    return;
+  }
+
   const userIds = await getDeliquentUserIds(standup);
   const NICK = await client.nick();
 
@@ -657,6 +738,40 @@ export const warnStandup = async (standup) => {
 };
 
 export const threatenStandup = async (standup) => {
+  try {
+    const channel = await client.getChannel(standup.room.channelId);
+
+    if (channel.is_archived || !channel.is_member) {
+      console.log(
+        'threatenStandup called for archived channel or a channel the bot is no longer a member of, skipping and marking channel inactive'
+      );
+
+      await standup.update({
+        state: STANDUP_CLOSED,
+      });
+
+      return standup.room.update({ active: false });
+    }
+  } catch (e) {
+    if (
+      e.code === 'slack_webapi_platform_error' &&
+      e.data.error === 'channel_not_found'
+    ) {
+      console.log(
+        'threatenStandup: channel no longer exists, marking as inactive'
+      );
+
+      await standup.update({
+        state: STANDUP_CLOSED,
+      });
+
+      return standup.room.update({ active: false });
+    }
+
+    throw e;
+    return;
+  }
+
   const userIds = await getDeliquentUserIds(standup);
   const NICK = await client.nick();
 

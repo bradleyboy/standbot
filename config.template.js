@@ -26,3 +26,7 @@ export const summaryEmailFromAddress = '"Standupbot" <no-reply@mydomain.com>';
 // the human readable version of the channel name.
 // Example: export const ignoreChannels = ['C1234567'];
 export const ignoreChannels = [];
+
+// Setting this to true runs the bot in a dry-run manner. The main loop
+// executes and reports info about the run, but doesn't actually do anything.
+export const isPaused = false;

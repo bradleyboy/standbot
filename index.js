@@ -5,6 +5,7 @@ import parser from './lib/parser';
 import { User, Room, Schedule, Standup } from './lib/db';
 
 import { INTERVAL } from './constants';
+import { isPaused } from './config';
 
 import {
   closeStandup,
@@ -23,7 +24,7 @@ process.on('unhandledRejection', (err) => {
   }
 });
 
-let intervalId;
+let timeoutId;
 
 async function migrateUsers() {
   const data = JSON.parse(
@@ -52,33 +53,77 @@ let loopStart = Date.now();
 async function runLoop() {
   console.log('Loop begin, time since last run: ', Date.now() - loopStart);
   loopStart = Date.now();
+  let errors = 0;
 
   const schedules = await Schedule.scope('shouldStart').findAll({
-    limit: 10,
+    limit: 5,
   });
 
-  await Promise.all(schedules.map(startScheduledStandup));
+  if (!isPaused) {
+    for (let i = 0; i < schedules.length; i++) {
+      try {
+        await startScheduledStandup(schedules[i]);
+      } catch (e) {
+        errors++;
+        console.log('unexpected error when starting scheduled standup', e);
+      }
+    }
+  }
 
   const nagWarn = await Standup.scope('shouldWarn').findAll({
     include: [Room],
+    limit: 5,
   });
 
-  await Promise.all(nagWarn.map(warnStandup));
+  if (!isPaused) {
+    for (let i = 0; i < nagWarn.length; i++) {
+      try {
+        await warnStandup(nagWarn[i]);
+      } catch (e) {
+        errors++;
+        console.log('unexpected error when reminding standup', e);
+      }
+    }
+  }
 
   const nagThreat = await Standup.scope('shouldThreat').findAll({
     include: [Room],
+    limit: 5,
   });
 
-  await Promise.all(nagThreat.map(threatenStandup));
+  if (!isPaused) {
+    for (let i = 0; i < nagThreat.length; i++) {
+      try {
+        await threatenStandup(nagThreat[i]);
+      } catch (e) {
+        errors++;
+        console.log('unexpected error when warning standup', e);
+      }
+    }
+  }
 
   const standups = await Standup.scope('shouldClose').findAll({
     include: [Room],
     limit: 1,
   });
 
-  await Promise.all(standups.map(closeStandup));
+  if (!isPaused) {
+    for (let i = 0; i < standups.length; i++) {
+      try {
+        await closeStandup(standups[i]);
+      } catch (e) {
+        errors++;
+        console.log('unexpected error when closing standup', e);
+      }
+    }
+  }
 
-  console.log('Loop end, time spent: ', Date.now() - loopStart);
+  console.log(
+    'Loop end, time spent:',
+    Date.now() - loopStart,
+    `stats: ${schedules.length} started, ${nagWarn.length} reminded, ${nagThreat.length} warned, ${standups.length} closed. errors: ${errors}`
+  );
+
   setTimeout(runLoop, INTERVAL);
 }
 
@@ -99,7 +144,7 @@ function start() {
 process.on('SIGTERM', () => {
   console.log('SIGTERM received.');
   client.stop();
-  clearInterval(intervalId);
+  clearTimeout(timeoutId);
 });
 
 if (process.env.USER_MIGRATIONS_FILE) {
