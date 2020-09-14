@@ -468,6 +468,7 @@ export const startScheduledStandup = async (schedule) => {
   const users = await getActiveRoomUsers(room);
 
   if (users.length === 0) {
+    console.log('startScheduledStandup: No active users.');
     return;
   }
 
