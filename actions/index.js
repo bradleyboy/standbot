@@ -321,7 +321,8 @@ const shouldSkip = (slackUser) => {
     text.indexOf('vacay') !== -1 ||
     text.indexOf('pto') !== -1 ||
     text.indexOf('ooo') !== -1 ||
-    text.indexOf('sick') !== -1
+    text.indexOf('sick') !== -1 ||
+    text.indexOf('out of office') !== -1
   );
 };
 
