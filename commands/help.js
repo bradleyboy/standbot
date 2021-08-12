@@ -1,6 +1,6 @@
 import client from '../lib/client';
 
-export default function(userId, channelId, arg, rawMessage) {
+export default function (userId, channelId, arg, rawMessage) {
   const out = [
     'Here are the commands I respond to.',
     '*.standup add &lt;@user&gt;* _Add a user to the standup. Adding multiple users at once is supported._',
@@ -18,6 +18,7 @@ export default function(userId, channelId, arg, rawMessage) {
     '*.standup email <ldap>* _Send the standup summary via email._',
     '*.standup announce <off|on>* _Set whether to announce the start/end of the standup in the channel._',
     '*.standup threading <off|on>* _Set whether to use a Slack thread for the standup._',
+    '*.standup broadcast <off|on>* _Set whether to send threaded Slackbot reples to the channel._',
   ];
 
   client.sayAt(channelId, userId, out.join('\n'), {

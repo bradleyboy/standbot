@@ -170,12 +170,10 @@ export const sendStandupSummaryEmail = async (standup) => {
     fragments.push(`
       <tr style="background: ${alternateBackground()};">
         <td width="120" style="padding: 10px 0; text-align: center;">
-          <img width="72" style="border-radius: 50%" src="${
-            user.profile.image_192
-          }">
-          <p style="margin:0; font-weight: bold;">${
-            user.profile.display_name
-          }</p>
+          <img width="72" style="border-radius: 50%" src="${user.profile.image_192
+      }">
+          <p style="margin:0; font-weight: bold;">${user.profile.display_name
+      }</p>
         </td>
         <td style="padding-top: 10px">${updates}</td>
       </tr>
@@ -186,9 +184,8 @@ export const sendStandupSummaryEmail = async (standup) => {
 <html>
 <head></head>
 <body style="padding: 5px;">
-  <h1 style="margin: 0; font-size: 16px; font-weight: normal; padding: 5px; border-bottom: 1px solid #444;">Today's standup summary for <b>${
-    channel.name
-  }</b></h1>
+  <h1 style="margin: 0; font-size: 16px; font-weight: normal; padding: 5px; border-bottom: 1px solid #444;">Today's standup summary for <b>${channel.name
+    }</b></h1>
   <table cellspacing="0" width="100%">${fragments.join('')}</table>
 </body>
   `;
@@ -365,6 +362,7 @@ export const startStandup = async (room) => {
     year: now.year,
     endTime: sequelize.literal(`datetime('now', '+${room.length} minutes')`),
     threaded: room.threading,
+    broadcast: room.broadcast,
   });
 
   if (aways.length) {
@@ -410,7 +408,7 @@ export const startStandup = async (room) => {
 
     await client.say(room.channelId, ping, {
       thread_ts: resp.ts,
-      reply_broadcast: true,
+      reply_broadcast: room.broadcast,
     });
 
     await client.pin(room.channelId, resp.ts);
@@ -672,12 +670,12 @@ export const getDeliquentUserIds = async (standup) => {
 
   const options = filterIds.length
     ? {
-        where: {
-          id: {
-            $notIn: filterIds,
-          },
+      where: {
+        id: {
+          $notIn: filterIds,
         },
-      }
+      },
+    }
     : {};
 
   const users = await getActiveRoomUsers(standup.room, options);
@@ -722,7 +720,7 @@ export const warnStandup = async (standup) => {
   const NICK = await client.nick();
 
   const opts = standup.threaded
-    ? { thread_ts: standup.threadRoot, reply_broadcast: true }
+    ? { thread_ts: standup.threadRoot, reply_broadcast: standup.broadcast }
     : {};
 
   await client.say(
@@ -778,7 +776,7 @@ export const threatenStandup = async (standup) => {
   const NICK = await client.nick();
 
   const opts = standup.threaded
-    ? { thread_ts: standup.threadRoot, reply_broadcast: true }
+    ? { thread_ts: standup.threadRoot, reply_broadcast: standup.broadcast }
     : {};
 
   await client.say(

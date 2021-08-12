@@ -11,6 +11,7 @@ export default {
   COMMANDS: [
     'add',
     'announce',
+    'broadcast',
     'end',
     'remove',
     'update',
