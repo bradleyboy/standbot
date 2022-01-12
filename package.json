@@ -8,7 +8,7 @@
     "@slack/rtm-api": "^5.0.5",
     "@slack/web-api": "^5.11.0",
     "emojify.js": "^1.1.0",
-    "markdown-it": "^7.0.0",
+    "markdown-it": "^12.3.2",
     "moment-timezone": "^0.4.1",
     "node-emoji": "^1.0.3",
     "node-fetch": "^1.3.3",
