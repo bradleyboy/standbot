@@ -122,7 +122,7 @@ export const closeStandup = async (standup) => {
     for (let i = 0; i < updates.length; i++) {
       const update = updates[i];
       const message = await formatUpdateMessage(update);
-      out.push(`${u(update.user.userId)}: ${message}`);
+      out.push(`${update.user.userId}: ${message}`);
     }
 
     const summary = out.join('\n');
