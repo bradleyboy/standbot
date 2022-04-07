@@ -122,7 +122,8 @@ export const closeStandup = async (standup) => {
     for (let i = 0; i < updates.length; i++) {
       const update = updates[i];
       const message = await formatUpdateMessage(update);
-      out.push(`${update.user.userId}: ${message}`);
+      const slackUser = await client.getUser(update.user.userId);
+      out.push(`${slackUser.profile.display_name}: ${message}`);
     }
 
     const summary = out.join('\n');
