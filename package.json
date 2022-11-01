@@ -20,7 +20,7 @@
     "unique-random-array": "^1.0.0"
   },
   "devDependencies": {
-    "babel": "^5.8.23"
+    "babel": "^6.23.0"
   },
   "scripts": {
     "start": "DEBUG=true babel-node index.js",
